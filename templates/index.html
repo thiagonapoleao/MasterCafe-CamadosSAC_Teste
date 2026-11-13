@@ -3452,29 +3452,47 @@
     // INÍCIO: atualizarTabelaTop5LocaisFilialDia
     // =========================================================================
     function atualizarTabelaTop5LocaisFilialDia() {
-      const dtDia = document.getElementById('filterTabelaTop5FilialDia')?.value;
-      const filialSel = document.getElementById('filterTabelaTop5FilialSelect')?.value || 'ALL';
+      const selFilialEl = document.getElementById('filterTabelaTop5FilialSelect');
+      const dtDiaEl = document.getElementById('filterTabelaTop5FilialDia');
       const tbody = document.getElementById('tableTop5LocaisFilialDiaBody');
-      if (!tbody || !dtDia) return;
+      if (!tbody || !dtDiaEl) return;
+
+      // Garante que o dropdown esteja populado mesmo se chamado antes da inicialização
+      if (selFilialEl && selFilialEl.options.length <= 1) {
+        const valorAtual = selFilialEl.value || 'ALL';
+        const filiais = obterListaFiliaisUnicas();
+        selFilialEl.innerHTML = '<option value="ALL">Todas as Filiais</option>';
+        filiais.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          selFilialEl.appendChild(opt);
+        });
+        selFilialEl.value = valorAtual;
+      }
+
+      const dtDia = dtDiaEl.value;
+      const filialSel = selFilialEl ? selFilialEl.value : 'ALL';
+      if (!dtDia) return;
 
       const agrupado = {};
       listaChamadosSAC.forEach(c => {
-        const ymd = parseDateToYMD(c.data);
+        const ymd = parseDateToYMD(c.data || c.Data);
         if (ymd !== dtDia) return;
 
-        const filialItem = normalizarTextoUtf8(c.cidade || 'Não Informada').trim();
+        const filialItem = normalizarTextoUtf8(c.cidade || c.Cidade || c.filial || 'Não Informada').trim();
         if (filialSel !== 'ALL' && filialItem.toLowerCase() !== filialSel.toLowerCase()) return;
 
-        const loc = normalizarTextoUtf8(c.localInterno || c.local_interno || 'Não Informado').trim();
-        const cli = normalizarTextoUtf8(c.cliente || '').trim();
-        const prob = normalizarTextoUtf8(c.problemas || 'Outros').trim();
+        const loc = normalizarTextoUtf8(c.localInterno || c.local_interno || c['Local Interno'] || 'Não Informado').trim();
+        const cli = normalizarTextoUtf8(c.cliente || c.Cliente || '').trim();
+        const prob = normalizarTextoUtf8(c.problemas || c.Problemas || c.problema || 'Outros').trim();
         const chave = loc + '||' + cli + '||' + filialItem;
 
         if (!agrupado[chave]) {
           agrupado[chave] = { local: loc, cliente: cli, filial: filialItem, qtd: 0, valor: 0, problemas: {} };
         }
         agrupado[chave].qtd += 1;
-        agrupado[chave].valor += parseValorNumerico(c.valor);
+        agrupado[chave].valor += parseValorNumerico(c.valor || c.Valor);
         agrupado[chave].problemas[prob] = (agrupado[chave].problemas[prob] || 0) + 1;
       });
 
@@ -3564,6 +3582,33 @@
     // =========================================================================
     // TÉRMINO: atualizarTabelaLocaisDiaPorCliente
     // =========================================================================
+    
+// =========================================================================
+    // INÍCIO: obterListaFiliaisUnicas
+    // =========================================================================
+    function obterListaFiliaisUnicas() {
+      const conjunto = new Set();
+
+      (dadosSAC.cidades || []).forEach(cid => {
+        const s = normalizarTextoUtf8(cid).trim();
+        if (s) conjunto.add(s);
+      });
+
+      (dadosSAC.clientes || []).forEach(c => {
+        const s = normalizarTextoUtf8(c.cidade || c.filial || c.filialResponsavel || '').trim();
+        if (s) conjunto.add(s);
+      });
+
+      (listaChamadosSAC || []).forEach(c => {
+        const s = normalizarTextoUtf8(c.cidade || c.Cidade || c.filial || '').trim();
+        if (s) conjunto.add(s);
+      });
+
+      return [...conjunto].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }
+    // =========================================================================
+    // TÉRMINO: obterListaFiliaisUnicas
+    // =========================================================================
 
     // =========================================================================
     // INÍCIO: inicializarFiltrosDashboardSAC
@@ -3651,27 +3696,29 @@
       const elTabTop5FilialDia = document.getElementById('filterTabelaTop5FilialDia');
       if (elTabTop5FilialDia) elTabTop5FilialDia.value = dFim;
 
+      const elTabClienteDia = document.getElementById('filterTabelaLocaisClienteDia');
+      if (elTabClienteDia) elTabClienteDia.value = dFim;
+
+      // Única declaração de 'filiais' populando ambos os seletores
+      const filiais = obterListaFiliaisUnicas();
+
+      const selFilial = document.getElementById('filterTopFilialSelect');
+      if (selFilial) {
+        selFilial.innerHTML = '<option value="ALL">Todas as Filiais</option>';
+        filiais.forEach(f => {
+          const opt = document.createElement('option'); opt.value = f; opt.textContent = f;
+          selFilial.appendChild(opt);
+        });
+      }
+
       const selTabFilial = document.getElementById('filterTabelaTop5FilialSelect');
       if (selTabFilial) {
         selTabFilial.innerHTML = '<option value="ALL">Todas as Filiais</option>';
         filiais.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
+          const opt = document.createElement('option'); opt.value = f; opt.textContent = f;
           selTabFilial.appendChild(opt);
         });
       }
-
-      const elTabClienteDia = document.getElementById('filterTabelaLocaisClienteDia');
-      if (elTabClienteDia) elTabClienteDia.value = dFim;
-
-      const selFilial = document.getElementById('filterTopFilialSelect');
-      selFilial.innerHTML = '<option value="ALL">Todas as Filiais</option>';
-      const filiais = [...new Set(listaChamadosSAC.map(c => normalizarTextoUtf8(c.cidade)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-      filiais.forEach(f => {
-        const opt = document.createElement('option'); opt.value = f; opt.textContent = f;
-        selFilial.appendChild(opt);
-      });
     }
     // =========================================================================
     // TÉRMINO: inicializarFiltrosDashboardSAC
