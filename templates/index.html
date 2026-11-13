@@ -508,41 +508,6 @@
             <div class="relative h-80"><canvas id="chartTop3LocalMes"></canvas></div>
           </div>
         </section>
-<!-- TABELA 1: TOP 5 LOCAIS INTERNOS DO DIA COM PROBLEMAS RESUMIDOS -->
-        <section class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 overflow-hidden">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-            <div>
-              <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
-                <i data-lucide="clipboard-list" class="w-4 h-4 text-rose-600"></i>
-                Top 5 Locais Internos do Dia — Problemas Resumidos
-              </h3>
-              <p class="text-xs text-slate-400">Ranking geral dos 5 locais internos mais acionados na data selecionada</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <label class="text-[11px] font-bold text-slate-500">Data:</label>
-              <input type="date" id="filterTabelaTop5Dia" onchange="atualizarTabelaTop5LocaisDia()" class="text-xs rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-1 text-slate-700">
-            </div>
-          </div>
-
-          <div class="w-full overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs text-slate-600">
-              <thead class="bg-slate-50 uppercase font-bold text-slate-500 text-[10px]">
-                <tr>
-                  <th class="py-2.5 px-3 rounded-l-lg w-14 text-center">Rank</th>
-                  <th class="py-2.5 px-3 w-1/4">Local Interno (Cliente)</th>
-                  <th class="py-2.5 px-3 w-24 text-center">Chamados</th>
-                  <th class="py-2.5 px-3 w-28 text-right">Valor Total</th>
-                  <th class="py-2.5 px-3 rounded-r-lg">Problemas Resumidos</th>
-                </tr>
-              </thead>
-              <tbody id="tableTop5LocaisDiaBody" class="divide-y divide-slate-100">
-                <tr>
-                  <td colspan="5" class="text-center py-6 text-slate-400 font-semibold">Nenhum chamado registrado na data selecionada.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
 
         <!-- TABELA 2: TOP 5 LOCAIS INTERNOS DO DIA POR FILIAL COM PROBLEMAS RESUMIDOS -->
         <section class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 overflow-hidden">
@@ -3394,60 +3359,7 @@
     // TÉRMINO: renderizarBadgesProblemasResumidos
     // =========================================================================
 
-    // =========================================================================
-    // INÍCIO: atualizarTabelaTop5LocaisDia
-    // =========================================================================
-    function atualizarTabelaTop5LocaisDia() {
-      const dtDia = document.getElementById('filterTabelaTop5Dia')?.value;
-      const tbody = document.getElementById('tableTop5LocaisDiaBody');
-      if (!tbody || !dtDia) return;
-
-      const agrupado = {};
-      listaChamadosSAC.forEach(c => {
-        const ymd = parseDateToYMD(c.data);
-        if (ymd === dtDia) {
-          const loc = normalizarTextoUtf8(c.localInterno || c.local_interno || 'Não Informado').trim();
-          const cli = normalizarTextoUtf8(c.cliente || '').trim();
-          const prob = normalizarTextoUtf8(c.problemas || 'Outros').trim();
-          const chave = loc + '||' + cli;
-
-          if (!agrupado[chave]) {
-            agrupado[chave] = { local: loc, cliente: cli, qtd: 0, valor: 0, problemas: {} };
-          }
-          agrupado[chave].qtd += 1;
-          agrupado[chave].valor += parseValorNumerico(c.valor);
-          agrupado[chave].problemas[prob] = (agrupado[chave].problemas[prob] || 0) + 1;
-        }
-      });
-
-      const top5 = Object.values(agrupado)
-        .sort((a, b) => b.qtd - a.qtd || b.valor - a.valor)
-        .slice(0, 5);
-
-      if (top5.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400 font-semibold">Nenhum chamado registrado para ' + dataIsoParaPtBr(dtDia) + '.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = top5.map((item, idx) => `
-        <tr class="hover:bg-slate-50 transition">
-          <td class="py-2.5 px-3 text-center font-black text-sky-700">#${idx + 1}</td>
-          <td class="py-2.5 px-3">
-            <div class="font-bold text-slate-800">${item.local}</div>
-            <div class="text-[11px] text-slate-400">${item.cliente}</div>
-          </td>
-          <td class="py-2.5 px-3 text-center">
-            <span class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 font-bold border border-sky-200">${item.qtd}</span>
-          </td>
-          <td class="py-2.5 px-3 text-right font-bold text-emerald-700">${formatCurrency(item.valor)}</td>
-          <td class="py-2.5 px-3">${renderizarBadgesProblemasResumidos(item.problemas)}</td>
-        </tr>
-      `).join('');
-    }
-    // =========================================================================
-    // TÉRMINO: atualizarTabelaTop5LocaisDia
-    // =========================================================================
-
+    
     // =========================================================================
     // INÍCIO: atualizarTabelaTop5LocaisFilialDia
     // =========================================================================
@@ -3611,6 +3523,31 @@
     // =========================================================================
 
     // =========================================================================
+    // INÍCIO: obterDataFocoInicialDia
+    // =========================================================================
+    function obterDataFocoInicialDia() {
+      const hoje = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const hojeLocalYMD = hoje.getFullYear() + '-' + pad(hoje.getMonth() + 1) + '-' + pad(hoje.getDate());
+
+      // Verifica se existem chamados na data local de hoje
+      const temChamadoHoje = listaChamadosSAC.some(c => parseDateToYMD(c.data || c.Data) === hojeLocalYMD);
+      if (temChamadoHoje) return hojeLocalYMD;
+
+      // Se não houver chamado hoje, busca a data mais recente existente na base para não iniciar vazio
+      let maiorData = '';
+      listaChamadosSAC.forEach(c => {
+        const ymd = parseDateToYMD(c.data || c.Data);
+        if (ymd && ymd > maiorData) maiorData = ymd;
+      });
+
+      return maiorData || hojeLocalYMD;
+    }
+    // =========================================================================
+    // TÉRMINO: obterDataFocoInicialDia
+    // =========================================================================
+
+    // =========================================================================
     // INÍCIO: inicializarFiltrosDashboardSAC
     // =========================================================================
     function inicializarFiltrosDashboardSAC() {
@@ -3669,10 +3606,10 @@
       const elDiasVal = document.getElementById('filterMesDiasVal');
       if (elDiasVal) elDiasVal.value = strMesAtual;
 
-      const dFim = hoje.toISOString().split('T')[0];
-      const dIniDate = new Date();
+      const dFim = obterDataFocoInicialDia();
+      const dIniDate = new Date(dFim + 'T12:00:00');
       dIniDate.setDate(dIniDate.getDate() - 7);
-      const dIni = dIniDate.toISOString().split('T')[0];
+      const dIni = dIniDate.getFullYear() + '-' + pad(dIniDate.getMonth() + 1) + '-' + pad(dIniDate.getDate());
 
       const sDtIni = document.getElementById('filterTopSemanaDtIni');
       const sDtFim = document.getElementById('filterTopSemanaDtFim');
@@ -3689,9 +3626,6 @@
 
       const elTop3Mes = document.getElementById('filterTop3LocalMes');
       if (elTop3Mes) elTop3Mes.value = dFim;
-
-      const elTabTop5Dia = document.getElementById('filterTabelaTop5Dia');
-      if (elTabTop5Dia) elTabTop5Dia.value = dFim;
 
       const elTabTop5FilialDia = document.getElementById('filterTabelaTop5FilialDia');
       if (elTabTop5FilialDia) elTabTop5FilialDia.value = dFim;
@@ -3803,7 +3737,6 @@
       atualizarGraficoTop3LocalDia();
       atualizarGraficoTop3LocalMes();
       atualizarTabelaTop3LocaisDia();
-      atualizarTabelaTop5LocaisDia();
       atualizarTabelaTop5LocaisFilialDia();
       atualizarTabelaLocaisDiaPorCliente();
     }
