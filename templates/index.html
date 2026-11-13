@@ -2218,6 +2218,35 @@
     // =========================================================================
 
     // =========================================================================
+    // INÍCIO: ordenarChamadosMaisRecentesPrimeiro
+    // =========================================================================
+    function ordenarChamadosMaisRecentesPrimeiro(lista) {
+      if (!Array.isArray(lista)) return [];
+      return [...lista].sort((a, b) => {
+        const chA = normalizarTextoUtf8(a.chamado || a.Chamado || '').trim();
+        const chB = normalizarTextoUtf8(b.chamado || b.Chamado || '').trim();
+
+        const matchA = chA.match(/SAC-(\d{4})-(\d+)/i);
+        const matchB = chB.match(/SAC-(\d{4})-(\d+)/i);
+
+        if (matchA && matchB) {
+          const anoDiff = parseInt(matchB[1], 10) - parseInt(matchA[1], 10);
+          if (anoDiff !== 0) return anoDiff;
+          return parseInt(matchB[2], 10) - parseInt(matchA[2], 10);
+        }
+
+        const dtA = parseDateToYMD(a.data || a.Data || '');
+        const dtB = parseDateToYMD(b.data || b.Data || '');
+        if (dtA !== dtB) return dtB.localeCompare(dtA);
+
+        return chB.localeCompare(chA, 'pt-BR', { numeric: true });
+      });
+    }
+    // =========================================================================
+    // TÉRMINO: ordenarChamadosMaisRecentesPrimeiro
+    // =========================================================================
+
+    // =========================================================================
     // INÍCIO: mudarPaginaSAC
     // =========================================================================
     function mudarPaginaSAC(delta) {
@@ -2258,7 +2287,7 @@
     // INÍCIO: renderizarTabelaChamadosSAC
     // =========================================================================
     function renderizarTabelaChamadosSAC(lista = listaFiltradaSACAtual) {
-      listaFiltradaSACAtual = Array.isArray(lista) ? lista : [];
+      listaFiltradaSACAtual = ordenarChamadosMaisRecentesPrimeiro(Array.isArray(lista) ? lista : []);
       const tbody = document.getElementById('tableSACChamadosBody');
       const badge = document.getElementById('badgeContadorSAC');
       const infoEl = document.getElementById('paginacaoSACInfo');
@@ -2392,7 +2421,7 @@
     // INÍCIO: renderizarTabelaChamadosAbertos
     // =========================================================================
     function renderizarTabelaChamadosAbertos(lista = listaFiltradaAbertosAtual) {
-      listaFiltradaAbertosAtual = Array.isArray(lista) ? lista : [];
+      listaFiltradaAbertosAtual = ordenarChamadosMaisRecentesPrimeiro(Array.isArray(lista) ? lista : []);
       const tbody = document.getElementById('tableChamadosAbertosBody');
       const badge = document.getElementById('badgeContadorAbertos');
       const infoEl = document.getElementById('paginacaoAbertosInfo');
