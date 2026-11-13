@@ -48,7 +48,7 @@ def normalizar_utf8_seguro(valor: Any) -> str:
     if not texto:
         return ""
 
-    # Executa até 2 passes para corrigir textos que vieram corrompidos (ex: Ã§ -> ç, Ã£ -> ã, Âº -> º)
+    # Executa até 2 passes para corrigir textos que vieram corrompidos (ex: Ã§ -> ç, Ã£ -> ã, Âº -> º, Âª -> ª)
     for _ in range(2):
         if any(marcador in texto for marcador in ("Ã", "Â", "â€")):
             try:
