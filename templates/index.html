@@ -84,9 +84,9 @@
       <div class="text-center space-y-3">
         <div class="inline-flex items-center justify-center p-2 bg-white rounded-2xl border border-slate-200 shadow-sm mx-auto overflow-hidden" style="height: 64px; min-width: 64px;">
           <img src="{{ logo_base64_src }}" alt="Logotipo" class="max-h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('loginFallbackIcon').style.display='flex';">
-          <div id="loginFallbackIcon" style="display: {{ 'none' if logo_base64_src else 'flex' }};" class="w-12 h-12 bg-amber-700 text-white rounded-xl items-center justify-center font-black text-base">
-            ☕
-          </div>
+          <div id="loginFallbackIcon" class="{{ 'hidden' if logo_base64_src else 'flex' }} w-12 h-12 bg-amber-700 text-white rounded-xl items-center justify-center font-black text-base">
+  ☕
+</div>
         </div>
         <div>
           <h2 class="text-xl font-black text-slate-900">Acesso ao Sistema</h2>
@@ -122,9 +122,9 @@
         <div class="flex items-center gap-4">
           <div class="flex items-center justify-center p-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" style="height: 54px; min-width: 54px;">
             <img id="headerLogoImg" src="{{ logo_base64_src }}" alt="Logotipo" class="max-h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('headerFallbackIcon').style.display='flex';">
-            <div id="headerFallbackIcon" style="display: {{ 'none' if logo_base64_src else 'flex' }};" class="w-10 h-10 bg-amber-700 text-white rounded-lg items-center justify-center font-black text-sm">
-              ☕
-            </div>
+            <div id="headerFallbackIcon" class="{{ 'hidden' if logo_base64_src else 'flex' }} w-10 h-10 bg-amber-700 text-white rounded-lg items-center justify-center font-black text-sm">
+  ☕
+</div>
           </div>
           <div>
             <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
@@ -1066,8 +1066,9 @@
 
     </main>
   </div>
-
+ <script id="dados-sac-payload" type="application/json">{{ dados_sac_json | safe }}</script>
   <script>
+    
     lucide.createIcons();
     Chart.register(ChartDataLabels);
 
@@ -1159,7 +1160,7 @@
     // =========================================================================
     // TÉRMINO: sanitizarObjetoUtf8
     // =========================================================================
-    }
+    
     // =========================================================================
     // TÉRMINO: normalizarTextoUtf8
     // =========================================================================
@@ -1257,7 +1258,11 @@
     // =========================================================================
 
     const BACKEND_API_URL = "/api/action";
-    const dadosSAC = sanitizarObjetoUtf8({{ dados_sac_json | safe }});
+   const rawPayloadEl = document.getElementById('dados-sac-payload');
+    const dadosSACBrutos = rawPayloadEl && rawPayloadEl.textContent.trim()
+      ? JSON.parse(rawPayloadEl.textContent)
+      : {};
+    const dadosSAC = sanitizarObjetoUtf8(dadosSACBrutos);
     // =========================================================================
     // INÍCIO: aplicarNormalizacaoUtf8NosInputs
     // =========================================================================
