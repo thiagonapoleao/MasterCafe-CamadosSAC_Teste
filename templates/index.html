@@ -1416,33 +1416,58 @@
     // INÍCIO: realizarLoginGlobal
     // =========================================================================
     function realizarLoginGlobal(e) {
-      e.preventDefault();
-      const u = normalizarTextoUtf8(document.getElementById('globalLoginUser').value || '').trim().toLowerCase();
-      const p = normalizarTextoUtf8(document.getElementById('globalLoginPass').value || '').trim().toLowerCase();
-      const erroBox = document.getElementById('globalLoginErro');
-
-      const userValido = (dadosSAC.usuarios || []).find(x => 
-        normalizarTextoUtf8(x.usuario || '').trim().toLowerCase() === u && 
-        normalizarTextoUtf8(x.senha || '').trim().toLowerCase() === p
-      );
-
-      if (userValido) {
-        erroBox.classList.add('hidden');
-        atendenteSACLogado = normalizarTextoUtf8(userValido.nome || userValido.usuario);
-        loginUsuarioConectado = normalizarTextoUtf8(userValido.usuario);
-        nivelAcessoLogado = normalizarTextoUtf8(userValido.acesso || "Atendente");
-
-        try {
-          sessionStorage.setItem('sac_atendente_conectado', atendenteSACLogado);
-          sessionStorage.setItem('sac_usuario_login', loginUsuarioConectado);
-          sessionStorage.setItem('sac_nivel_acesso', nivelAcessoLogado);
-          sessionStorage.setItem('aba_ativa_atual', 'dashboardSAC');
-        } catch(e) {}
-
-        verificarEstadoAutenticacao();
-      } else {
-        erroBox.classList.remove('hidden');
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+        e.stopPropagation();
       }
+
+      try {
+        const userEl = document.getElementById('globalLoginUser');
+        const passEl = document.getElementById('globalLoginPass');
+        const erroBox = document.getElementById('globalLoginErro');
+
+        const u = normalizarTextoUtf8(userEl ? userEl.value : '').trim().toLowerCase();
+        const p = normalizarTextoUtf8(passEl ? passEl.value : '').trim().toLowerCase();
+
+        const listaUsuarios = (dadosSAC && Array.isArray(dadosSAC.usuarios)) ? dadosSAC.usuarios : [];
+
+        if (listaUsuarios.length === 0) {
+          alert('⚠️ Atenção: Nenhum usuário foi carregado do banco de dados (dadosSAC.usuarios está vazio). Verifique a conexão com o banco.');
+          return false;
+        }
+
+        const userValido = listaUsuarios.find(x => {
+          const usrBanco = normalizarTextoUtf8(x.usuario || x.Usuario || x.login || '').trim().toLowerCase();
+          const senBanco = normalizarTextoUtf8(x.senha || x.Senha || '').trim().toLowerCase();
+          return usrBanco === u && senBanco === p;
+        });
+
+        if (userValido) {
+          if (erroBox) erroBox.classList.add('hidden');
+          atendenteSACLogado = normalizarTextoUtf8(userValido.nome || userValido.Nome || userValido.usuario || u);
+          loginUsuarioConectado = normalizarTextoUtf8(userValido.usuario || u);
+          nivelAcessoLogado = normalizarTextoUtf8(userValido.acesso || userValido.Acesso || "Atendente");
+
+          try {
+            sessionStorage.setItem('sac_atendente_conectado', atendenteSACLogado);
+            sessionStorage.setItem('sac_usuario_login', loginUsuarioConectado);
+            sessionStorage.setItem('sac_nivel_acesso', nivelAcessoLogado);
+            sessionStorage.setItem('aba_ativa_atual', 'dashboardSAC');
+          } catch (storageErr) {}
+
+          verificarEstadoAutenticacao();
+        } else {
+          if (erroBox) {
+            erroBox.classList.remove('hidden');
+          } else {
+            alert('Usuário ou senha incorretos!');
+          }
+        }
+      } catch (err) {
+        console.error('Erro crítico no login:', err);
+        alert('❌ Erro ao executar login: ' + err.message);
+      }
+      return false;
     }
     // =========================================================================
     // TÉRMINO: realizarLoginGlobal
@@ -3967,6 +3992,26 @@
     });
 
     verificarEstadoAutenticacao();
+
+    // =========================================================================
+    // INÍCIO: Inicialização Segura da Aplicação
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      const formLogin = document.getElementById('globalLoginForm');
+      if (formLogin) {
+        formLogin.addEventListener('submit', realizarLoginGlobal);
+      }
+    });
+
+    try {
+      verificarEstadoAutenticacao();
+    } catch (errInit) {
+      console.error("Erro na inicialização:", errInit);
+    }
+    // =========================================================================
+    // TÉRMINO: Inicialização Segura da Aplicação
+    // =========================================================================
+  </script>
   </script>
 </body>
 </html>
