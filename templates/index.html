@@ -1135,6 +1135,38 @@
       }
 
       // 3. Normaliza para forma canônica composta NFC (garante ã, ç, é, ê, ô, ú, º, ª íntegros)
+      // 3. Restaura palavras PT-BR caso o banco já contenha o caractere de substituição \uFFFD ()
+      if (str.indexOf('\uFFFD') !== -1) {
+        const mapaFffd = [
+          ['\uFFFD\uFFFDo', 'ção'], ['\uFFFD\uFFFDO', 'ÇÃO'],
+          ['\uFFFD\uFFFDes', 'ções'], ['\uFFFD\uFFFDES', 'ÇÕES'],
+          ['\uFFFD\uFFFDa', 'ça'], ['\uFFFD\uFFFDA', 'ÇA'],
+          ['S\uFFFDo ', 'São '], ['S\uFFFDO ', 'SÃO '],
+          ['Ribeir\uFFFDo', 'Ribeirão'], ['RIBEIR\uFFFDO', 'RIBEIRÃO'],
+          ['N\uFFFDo', 'Não'], ['N\uFFFDO', 'NÃO'],
+          ['Caf\uFFFD', 'Café'], ['CAF\uFFFD', 'CAFÉ'],
+          ['Cr\uFFFDdito', 'Crédito'], ['D\uFFFDbito', 'Débito'],
+          ['Devolu\uFFFD\uFFFDo', 'Devolução'], ['Transa\uFFFD\uFFFDo', 'Transação'],
+          ['Observa\uFFFD\uFFFDo', 'Observação'], ['Descri\uFFFD\uFFFDo', 'Descrição'],
+          ['Manuten\uFFFD\uFFFDo', 'Manutenção'], ['Refeit\uFFFDrio', 'Refeitório'],
+          ['Recep\uFFFD\uFFFDo', 'Recepção'], ['F\uFFFDbrica', 'Fábrica'],
+          ['M\uFFFDquina', 'Máquina'], ['M\uFFFDquinas', 'Máquinas'],
+          ['Jo\uFFFDo', 'João'], ['Jos\uFFFD', 'José'],
+          ['Ant\uFFFDnio', 'Antônio'], ['S\uFFFDrgio', 'Sérgio'],
+          ['M\uFFFDrcio', 'Márcio'], ['Andr\uFFFD', 'André'],
+          ['L\uFFFDcia', 'Lúcia'], ['Patr\uFFFDcia', 'Patrícia'],
+          ['Cl\uFFFDudia', 'Cláudia'], ['Fl\uFFFDvia', 'Flávia'],
+          ['Cart\uFFFDo', 'Cartão'], ['cart\uFFFDo', 'cartão'],
+          ['\uFFFDgua', 'Água'], ['A\uFFFD\uFFFDcar', 'Açúcar'],
+          ['N\uFFFD', 'Nº'], ['n\uFFFD', 'nº']
+        ];
+        for (const [errado, certo] of mapaFffd) {
+          if (str.indexOf(errado) !== -1) {
+            str = str.split(errado).join(certo);
+          }
+        }
+        str = str.replace(/\uFFFDo(\s|$)/g, 'ão$1').replace(/\uFFFDes(\s|$)/g, 'ões$1');
+      }
       return str.normalize('NFC');
     }
     // =========================================================================
