@@ -40,15 +40,25 @@ def get_db_connection(autocommit: bool = False):
 # =========================================================================
 # INÍCIO: normalizar_utf8_seguro
 # =========================================================================
+# =========================================================================
+# INÍCIO: normalizar_utf8_seguro
+# =========================================================================
 def normalizar_utf8_seguro(valor: Any) -> str:
-    """Repara eventual dupla codificação (Latin-1/CP1252 -> UTF-8) e normaliza em NFC (PT-BR)."""
+    """Repara dupla codificação, substitui caracteres corrompidos (\uFFFD) em PT-BR e normaliza em NFC."""
     if valor is None:
         return ""
-    texto = str(valor)
+    if isinstance(valor, (bytes, bytearray)):
+        try:
+            texto = valor.decode("utf-8")
+        except UnicodeDecodeError:
+            texto = valor.decode("cp1252", errors="replace")
+    else:
+        texto = str(valor)
+
     if not texto:
         return ""
 
-    # Executa até 2 passes para corrigir textos que vieram corrompidos (ex: Ã§ -> ç, Ã£ -> ã, Âº -> º, Âª -> ª)
+    # 1. Repara dupla codificação (Latin-1/CP1252 -> UTF-8)
     for _ in range(2):
         if any(marcador in texto for marcador in ("Ã", "Â", "â€")):
             try:
@@ -69,27 +79,75 @@ def normalizar_utf8_seguro(valor: Any) -> str:
         else:
             break
 
+    # 2. Restaura palavras PT-BR quando o banco já armazenou o caractere de substituição '\ufffd' ()
+    if "\ufffd" in texto:
+        substituicoes_fffd = [
+            # Dois caracteres seguidos (ex: ção, ções, çã)
+            ("o", "ção"), ("O", "ÇÃO"),
+            ("es", "ções"), ("ES", "ÇÕES"),
+            ("a", "ça"), ("A", "ÇA"),
+            # Palavras e termos comuns do domínio SAC / Cidades / Operação
+            ("So ", "São "), ("SO ", "SÃO "),
+            ("Ribeiro", "Ribeirão"), ("RIBEIRO", "RIBEIRÃO"),
+            ("So Carlos", "São Carlos"), ("So Paulo", "São Paulo"),
+            ("So Jos", "São José"), ("Ja", "Jaú"), ("Bauru", "Bauru"),
+            ("No", "Não"), ("NO", "NÃO"),
+            ("Caf", "Café"), ("CAF", "CAFÉ"),
+            ("Crdito", "Crédito"), ("CRDITO", "CRÉDITO"),
+            ("Dbito", "Débito"), ("DBITO", "DÉBITO"),
+            ("Devoluo", "Devolução"), ("DEVOLUO", "DEVOLUÇÃO"),
+            ("Transao", "Transação"), ("TRANSAO", "TRANSAÇÃO"),
+            ("Observao", "Observação"), ("OBSERVAO", "OBSERVAÇÃO"),
+            ("Descrio", "Descrição"), ("DESCRIO", "DESCRIÇÃO"),
+            ("Manuteno", "Manutenção"), ("MANUTENO", "MANUTENÇÃO"),
+            ("Refeitrio", "Refeitório"), ("REFEITRIO", "REFEITÓRIO"),
+            ("Recepo", "Recepção"), ("RECEPO", "RECEPÇÃO"),
+            ("Fbrica", "Fábrica"), ("FBRICA", "FÁBRICA"),
+            ("Mquina", "Máquina"), ("MQUINA", "MÁQUINA"),
+            ("Mquinas", "Máquinas"), ("MQUINAS", "MÁQUINAS"),
+            ("Joo", "João"), ("JOO", "JOÃO"),
+            ("Jos", "José"), ("JOS", "JOSÉ"),
+            ("Antnio", "Antônio"), ("ANTNIO", "ANTÔNIO"),
+            ("Srgio", "Sérgio"), ("SRGIO", "SÉRGIO"),
+            ("Mrcio", "Márcio"), ("MRCIO", "MÁRCIO"),
+            ("Andr", "André"), ("ANDR", "ANDRÉ"),
+            ("Lcia", "Lúcia"), ("LCIA", "LÚCIA"),
+            ("Patrcia", "Patrícia"), ("PATRCIA", "PATRÍCIA"),
+            ("Cludia", "Cláudia"), ("CLUDIA", "CLÁUDIA"),
+            ("Flvia", "Flávia"), ("FLVIA", "FLÁVIA"),
+            ("Vitria", "Vitória"), ("VITRIA", "VITÓRIA"),
+            ("Goinia", "Goiânia"), ("GOINIA", "GOIÂNIA"),
+            ("Braslia", "Brasília"), ("BRASLIA", "BRASÍLIA"),
+            ("Cuiab", "Cuiabá"), ("CUIAB", "CUIABÁ"),
+            ("Belm", "Belém"), ("BELM", "BELÉM"),
+            ("Macap", "Macapá"), ("MACAP", "MACAPÁ"),
+            ("Macei", "Maceió"), ("MACEI", "MACEIÓ"),
+            ("Florianpolis", "Florianópolis"),
+            ("Aleatria", "Aleatória"),
+            ("Nmero", "Número"), ("nmero", "número"),
+            ("Horrio", "Horário"), ("horrio", "horário"),
+            ("Carto", "Cartão"), ("carto", "cartão"),
+            ("gua", "Água"), ("gua", "água"),
+            ("Acar", "Açúcar"), ("acar", "açúcar"),
+            ("Ch", "Chá"), ("ch", "chá"),
+            ("Po", "Pão"), ("po", "pão"),
+            ("N", "Nº"), ("n", "nº"),
+        ]
+        for errado, certo in substituicoes_fffd:
+            if errado in texto:
+                texto = texto.replace(errado, certo)
+
+        # Fallback genérico para vogais acentuadas comuns no meio/fim de palavras
+        texto = texto.replace("o ", "ão ").replace("es ", "ões ")
+        if texto.endswith("o"):
+            texto = texto[:-2] + "ão"
+        if texto.endswith("es"):
+            texto = texto[:-3] + "ões"
+
     return unicodedata.normalize("NFC", texto)
 # =========================================================================
 # TÉRMINO: normalizar_utf8_seguro
 # =========================================================================
-
-
-# =========================================================================
-# INÍCIO: sanitizar_estrutura_utf8
-# =========================================================================
-def sanitizar_estrutura_utf8(dado: Any) -> Any:
-    """Aplica normalizar_utf8_seguro recursivamente em dicionários, listas e strings."""
-    if isinstance(dado, str):
-        return normalizar_utf8_seguro(dado)
-    if isinstance(dado, list):
-        return [sanitizar_estrutura_utf8(item) for item in dado]
-    if isinstance(dado, dict):
-        return {
-            normalizar_utf8_seguro(k) if isinstance(k, str) else k: sanitizar_estrutura_utf8(v)
-            for k, v in dado.items()
-        }
-    return dado
 # =========================================================================
 # TÉRMINO: sanitizar_estrutura_utf8
 # =========================================================================
