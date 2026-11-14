@@ -1130,7 +1130,12 @@
         }
       }
 
-      // 3. Restaura palavras PT-BR somente quando existir o caractere \uFFFD explícito
+      // 3. Converte a sequência literal "ï¿½" (\u00EF\u00BF\u00BD) para \uFFFD antes do mapeamento
+      if (str.indexOf('\u00EF\u00BF\u00BD') !== -1) {
+        str = str.split('\u00EF\u00BF\u00BD').join('\uFFFD');
+      }
+
+      // 4. Restaura palavras PT-BR somente quando existir o caractere \uFFFD explícito
       if (str.indexOf('\uFFFD') !== -1) {
         const mapaFffd = [
           ['\uFFFD\uFFFDo', 'ção'], ['\uFFFD\uFFFDO', 'ÇÃO'],
@@ -1138,6 +1143,9 @@
           ['\uFFFD\uFFFDa', 'ça'], ['\uFFFD\uFFFDA', 'ÇA'],
           ['S\uFFFDo ', 'São '], ['S\uFFFDO ', 'SÃO '],
           ['Ribeir\uFFFDo', 'Ribeirão'], ['RIBEIR\uFFFDO', 'RIBEIRÃO'],
+          ['Ja\uFFFD', 'Jaú'], ['Goi\uFFFDnia', 'Goiânia'],
+          ['Bras\uFFFDlia', 'Brasília'], ['Cuiab\uFFFD', 'Cuiabá'],
+          ['Bel\uFFFDm', 'Belém'], ['Macei\uFFFD', 'Maceió'],
           ['N\uFFFDo', 'Não'], ['N\uFFFDO', 'NÃO'],
           ['Caf\uFFFD', 'Café'], ['CAF\uFFFD', 'CAFÉ'],
           ['Cr\uFFFDdito', 'Crédito'], ['D\uFFFDbito', 'Débito'],
@@ -1146,13 +1154,22 @@
           ['Manuten\uFFFD\uFFFDo', 'Manutenção'], ['Refeit\uFFFDrio', 'Refeitório'],
           ['Recep\uFFFD\uFFFDo', 'Recepção'], ['F\uFFFDbrica', 'Fábrica'],
           ['M\uFFFDquina', 'Máquina'], ['M\uFFFDquinas', 'Máquinas'],
+          ['Pr\uFFFDdio', 'Prédio'], ['T\uFFFDrreo', 'Térreo'],
+          ['M\uFFFDdio', 'Médio'], ['M\uFFFDdia', 'Média'],
+          ['Cart\uFFFDo', 'Cartão'], ['cart\uFFFDo', 'cartão'],
+          ['Aleat\uFFFDria', 'Aleatória'], ['N\uFFFDmero', 'Número'],
+          ['Hor\uFFFDrio', 'Horário'], ['Relat\uFFFDrio', 'Relatório'],
+          ['Usu\uFFFDrio', 'Usuário'], ['Funcion\uFFFDrio', 'Funcionário'],
+          ['\uFFFDgua', 'Água'], ['A\uFFFD\uFFFDcar', 'Açúcar'],
+          ['Eug\uFFFDnio', 'Eugênio'], ['EUG\uFFFDNIO', 'EUGÊNIO'],
           ['Jo\uFFFDo', 'João'], ['Jos\uFFFD', 'José'],
           ['Ant\uFFFDnio', 'Antônio'], ['S\uFFFDrgio', 'Sérgio'],
-          ['M\uFFFDrcio', 'Márcio'], ['Andr\uFFFD', 'André'],
-          ['L\uFFFDcia', 'Lúcia'], ['Patr\uFFFDcia', 'Patrícia'],
-          ['Cl\uFFFDudia', 'Cláudia'], ['Fl\uFFFDvia', 'Flávia'],
-          ['Cart\uFFFDo', 'Cartão'], ['cart\uFFFDo', 'cartão'],
-          ['\uFFFDgua', 'Água'], ['A\uFFFD\uFFFDcar', 'Açúcar'],
+          ['M\uFFFDrcio', 'Márcio'], ['M\uFFFDrcia', 'Márcia'],
+          ['Andr\uFFFD', 'André'], ['L\uFFFDcia', 'Lúcia'],
+          ['Patr\uFFFDcia', 'Patrícia'], ['Cl\uFFFDudia', 'Cláudia'],
+          ['Fl\uFFFDvia', 'Flávia'], ['Vit\uFFFDria', 'Vitória'],
+          ['Val\uFFFDria', 'Valéria'], ['Rog\uFFFDrio', 'Rogério'],
+          ['C\uFFFDsar', 'César'], ['V\uFFFDtor', 'Vítor'],
           ['N\uFFFD', 'Nº'], ['n\uFFFD', 'nº']
         ];
         for (const [errado, certo] of mapaFffd) {
