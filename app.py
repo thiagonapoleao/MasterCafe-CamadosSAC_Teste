@@ -36,13 +36,11 @@ def get_db_connection(autocommit: bool = False):
 # TÉRMINO: get_db_connection
 # =========================================================================
 
-
-
 # =========================================================================
 # INÍCIO: normalizar_utf8_seguro
 # =========================================================================
 def normalizar_utf8_seguro(valor: Any) -> str:
-    """Repara dupla codificação UTF-8/Latin-1 e restaura apenas tokens que contenham \\ufffd."""
+    """Repara dupla codificação UTF-8/Latin-1, sequências ï¿½ e restaura tokens com \\ufffd."""
     if valor is None:
         return ""
     if isinstance(valor, (bytes, bytearray)):
@@ -77,15 +75,26 @@ def normalizar_utf8_seguro(valor: Any) -> str:
         else:
             break
 
-    # 2. Somente atua se existir explicitamente o caractere de substituição \ufffd
-    if "\ufffd" in texto:
-        U = "\ufffd"
+    # 2. Converte a sequência literal "ï¿½" (\u00ef\u00bf\u00bd) para o marcador padrão \ufffd
+    U = "\ufffd"
+    if "\u00ef\u00bf\u00bd" in texto:
+        texto = texto.replace("\u00ef\u00bf\u00bd", U)
+
+    # 3. Somente atua se existir explicitamente o caractere de substituição \ufffd
+    if U in texto:
         substituicoes_fffd = [
+            # Terminações compostas (ção, ções, ça)
             (f"{U}{U}o", "ção"), (f"{U}{U}O", "ÇÃO"),
             (f"{U}{U}es", "ções"), (f"{U}{U}ES", "ÇÕES"),
             (f"{U}{U}a", "ça"), (f"{U}{U}A", "ÇA"),
+            # Cidades e locais
             (f"S{U}o ", "São "), (f"S{U}O ", "SÃO "),
             (f"Ribeir{U}o", "Ribeirão"), (f"RIBEIR{U}O", "RIBEIRÃO"),
+            (f"Ja{U}", "Jaú"), (f"JA{U}", "JAÚ"),
+            (f"Goi{U}nia", "Goiânia"), (f"Bras{U}lia", "Brasília"),
+            (f"Cuiab{U}", "Cuiabá"), (f"Bel{U}m", "Belém"),
+            (f"Macei{U}", "Maceió"), (f"Florian{U}polis", "Florianópolis"),
+            # Termos operacionais e financeiros
             (f"N{U}o", "Não"), (f"N{U}O", "NÃO"),
             (f"Caf{U}", "Café"), (f"CAF{U}", "CAFÉ"),
             (f"Cr{U}dito", "Crédito"), (f"D{U}bito", "Débito"),
@@ -94,20 +103,31 @@ def normalizar_utf8_seguro(valor: Any) -> str:
             (f"Manuten{U}{U}o", "Manutenção"), (f"Refeit{U}rio", "Refeitório"),
             (f"Recep{U}{U}o", "Recepção"), (f"F{U}brica", "Fábrica"),
             (f"M{U}quina", "Máquina"), (f"M{U}quinas", "Máquinas"),
+            (f"Pr{U}dio", "Prédio"), (f"T{U}rreo", "Térreo"),
+            (f"M{U}dio", "Médio"), (f"M{U}dia", "Média"),
+            (f"Cart{U}o", "Cartão"), (f"cart{U}o", "cartão"),
+            (f"Aleat{U}ria", "Aleatória"), (f"N{U}mero", "Número"),
+            (f"Hor{U}rio", "Horário"), (f"Relat{U}rio", "Relatório"),
+            (f"Usu{U}rio", "Usuário"), (f"Funcion{U}rio", "Funcionário"),
+            (f"{U}gua", "Água"), (f"A{U}{U}car", "Açúcar"),
+            (f"Ch{U}", "Chá"), (f"P{U}o", "Pão"),
+            # Nomes próprios comuns
+            (f"Eug{U}nio", "Eugênio"), (f"EUG{U}NIO", "EUGÊNIO"),
             (f"Jo{U}o", "João"), (f"Jos{U}", "José"),
             (f"Ant{U}nio", "Antônio"), (f"S{U}rgio", "Sérgio"),
-            (f"M{U}rcio", "Márcio"), (f"Andr{U}", "André"),
-            (f"L{U}cia", "Lúcia"), (f"Patr{U}cia", "Patrícia"),
-            (f"Cl{U}udia", "Cláudia"), (f"Fl{U}via", "Flávia"),
-            (f"Cart{U}o", "Cartão"), (f"cart{U}o", "cartão"),
-            (f"{U}gua", "Água"), (f"A{U}{U}car", "Açúcar"),
+            (f"M{U}rcio", "Márcio"), (f"M{U}rcia", "Márcia"),
+            (f"Andr{U}", "André"), (f"L{U}cia", "Lúcia"),
+            (f"Patr{U}cia", "Patrícia"), (f"Cl{U}udia", "Cláudia"),
+            (f"Fl{U}via", "Flávia"), (f"Vit{U}ria", "Vitória"),
+            (f"Val{U}ria", "Valéria"), (f"Rog{U}rio", "Rogério"),
+            (f"C{U}sar", "César"), (f"V{U}tor", "Vítor"),
             (f"N{U}", "Nº"), (f"n{U}", "nº"),
         ]
         for errado, certo in substituicoes_fffd:
             if errado in texto:
                 texto = texto.replace(errado, certo)
 
-        # Substitui apenas o caractere \ufffd remanescente sem tocar em letras normais
+        # Terminações genéricas seguras com \ufffd explícito
         texto = texto.replace(f"{U}o ", "ão ").replace(f"{U}es ", "ões ")
         if texto.endswith(f"{U}o"):
             texto = texto[:-2] + "ão"
