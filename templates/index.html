@@ -1066,11 +1066,14 @@
 
     </main>
   </div>
- <script id="dados-sac-payload" type="application/json">{{ dados_sac_json | safe }}</script>
-  <script>
+
+  <script id="dados-sac-b64" type="text/plain">{{ dados_sac_b64 }}</script>
+  
+  <script>   
     
     lucide.createIcons();
     Chart.register(ChartDataLabels);
+    
 
 // =========================================================================
     // INÍCIO: normalizarTextoUtf8
@@ -1206,13 +1209,7 @@
     // TÉRMINO: sanitizarObjetoUtf8
     // =========================================================================
     
-    // =========================================================================
-    // TÉRMINO: normalizarTextoUtf8
-    // =========================================================================
-
-    // =========================================================================
-    // INÍCIO: sanitizarObjetoUtf8
-    // =========================================================================
+    
     // =========================================================================
     // INÍCIO: normalizarTextoUtf8
     // =========================================================================
@@ -1298,16 +1295,37 @@
     // =========================================================================
     // TÉRMINO: sanitizarObjetoUtf8
     // =========================================================================
+    
+    
     // =========================================================================
     // TÉRMINO: sanitizarObjetoUtf8
     // =========================================================================
 
     const BACKEND_API_URL = "/api/action";
-   const rawPayloadEl = document.getElementById('dados-sac-payload');
-    const dadosSACBrutos = rawPayloadEl && rawPayloadEl.textContent.trim()
-      ? JSON.parse(rawPayloadEl.textContent)
+
+    // =========================================================================
+    // INÍCIO: decodificarBase64Utf8
+    // =========================================================================
+    function decodificarBase64Utf8(b64Str) {
+      if (!b64Str) return {};
+      const binString = atob(b64Str.trim());
+      const bytes = new Uint8Array(binString.length);
+      for (let i = 0; i < binString.length; i++) {
+        bytes[i] = binString.charCodeAt(i);
+      }
+      const jsonUtf8 = new TextDecoder('utf-8').decode(bytes);
+      return JSON.parse(jsonUtf8);
+    }
+    // =========================================================================
+    // TÉRMINO: decodificarBase64Utf8
+    // =========================================================================
+
+    const b64El = document.getElementById('dados-sac-b64');
+    const dadosSACBrutos = (b64El && b64El.textContent.trim())
+      ? decodificarBase64Utf8(b64El.textContent)
       : {};
     const dadosSAC = sanitizarObjetoUtf8(dadosSACBrutos);
+
     // =========================================================================
     // INÍCIO: aplicarNormalizacaoUtf8NosInputs
     // =========================================================================
@@ -1324,6 +1342,7 @@
     // =========================================================================
     // TÉRMINO: aplicarNormalizacaoUtf8NosInputs
     // =========================================================================
+    
     aplicarNormalizacaoUtf8NosInputs();
     let listaChamadosSAC = Array.isArray(dadosSAC.chamados) ? dadosSAC.chamados : [];
     let listaCadastroClientes = Array.isArray(dadosSAC.cadastro_clientes) ? dadosSAC.cadastro_clientes : [];
