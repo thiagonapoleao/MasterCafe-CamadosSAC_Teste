@@ -25,13 +25,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DB_URL)
 # INÍCIO: get_db_connection
 # =========================================================================
 def get_db_connection(autocommit: bool = False):
-    return psycopg.connect(
+    conn = psycopg.connect(
         DATABASE_URL,
         row_factory=dict_row,
         connect_timeout=15,
-        autocommit=autocommit,
-        options="-c client_encoding=UTF8"
+        autocommit=autocommit
     )
+    conn.execute("SET client_encoding TO 'UTF8'")
+    return conn
 # =========================================================================
 # TÉRMINO: get_db_connection
 # =========================================================================
@@ -375,8 +376,8 @@ async def carregar_pagina_principal(request: Request):
             "maior_sac_ano": maior_sac_ano,
             "chamados": chamados_formatados
         })
-        
-        dados_sac_json = json.dumps(dados_sac, default=str, ensure_ascii=False)
+        dados_sac_json_str = json.dumps(dados_sac, default=str, ensure_ascii=False)
+        dados_sac_b64 = base64.b64encode(dados_sac_json_str.encode("utf-8")).decode("ascii")
         total_chamados = len(chamados_formatados)
         
         return templates.TemplateResponse(
@@ -384,12 +385,13 @@ async def carregar_pagina_principal(request: Request):
             name="index.html",
             context={
                 "logo_base64_src": logo_base64_src,
-                "dados_sac_json": dados_sac_json,
+                "dados_sac_json": dados_sac_json_str,
+                "dados_sac_b64": dados_sac_b64,
                 "total_chamados_carregados": total_chamados
             },
             media_type="text/html; charset=utf-8"
         )
-
+    
     except Exception as e:
         tb = traceback.format_exc()
         return HTMLResponse(
