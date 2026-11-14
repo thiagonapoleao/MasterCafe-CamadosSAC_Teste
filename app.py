@@ -259,6 +259,24 @@ def buscar_primeira_coluna_texto(cur, tabela: str, colunas_preferenciais: list) 
 # TÉRMINO: buscar_primeira_coluna_texto
 # =========================================================================
 
+# =========================================================================
+# INÍCIO: sanitizar_estrutura_utf8
+# =========================================================================
+def sanitizar_estrutura_utf8(dado: Any) -> Any:
+    """Aplica normalizar_utf8_seguro recursivamente em dicionários, listas e strings."""
+    if isinstance(dado, str):
+        return normalizar_utf8_seguro(dado)
+    if isinstance(dado, list):
+        return [sanitizar_estrutura_utf8(item) for item in dado]
+    if isinstance(dado, dict):
+        return {
+            normalizar_utf8_seguro(k) if isinstance(k, str) else k: sanitizar_estrutura_utf8(v)
+            for k, v in dado.items()
+        }
+    return dado
+# =========================================================================
+# TÉRMINO: sanitizar_estrutura_utf8
+# =========================================================================
 
 # =========================================================================
 # INÍCIO: carregar_pagina_principal
