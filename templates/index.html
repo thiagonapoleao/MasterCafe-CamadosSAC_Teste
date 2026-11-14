@@ -1072,10 +1072,7 @@
     lucide.createIcons();
     Chart.register(ChartDataLabels);
 
-    // =========================================================================
-    // INÍCIO: normalizarTextoUtf8
-    // =========================================================================
-   // =========================================================================
+// =========================================================================
     // INÍCIO: normalizarTextoUtf8
     // =========================================================================
     function normalizarTextoUtf8(valor) {
@@ -1083,15 +1080,14 @@
       let str = String(valor);
       if (!str) return '';
 
-      // 1. Decodifica entidades HTML caso venham escapadas do template/banco (ex: &ccedil;, &#227;)
-      if (str.includes('&') && str.includes(';')) {
+      // 1. Decodifica entidades HTML caso venham escapadas do template/banco
+      if (str.indexOf('&') !== -1 && str.indexOf(';') !== -1) {
         const txtArea = document.createElement('textarea');
         txtArea.innerHTML = str;
         str = txtArea.value;
       }
 
-      // 2. Repara dupla codificação UTF-8 lida como Latin-1 / Windows-1252 (ex: Ã§ -> ç, Ã£ -> ã, Âº -> º, Âª -> ª)
-      // Executa até 2 passes para corrigir casos duplamente corrompidos
+      // 2. Repara dupla codificação UTF-8 lida como Latin-1 / Windows-1252
       const mapaCp1252ParaByte = {
         0x20AC: 0x80, 0x201A: 0x82, 0x0192: 0x83, 0x201E: 0x84, 0x2026: 0x85,
         0x2020: 0x86, 0x2021: 0x87, 0x02C6: 0x88, 0x2030: 0x89, 0x0160: 0x8A,
@@ -1102,7 +1098,7 @@
       };
 
       for (let pass = 0; pass < 2; pass++) {
-        if (!/(Ã[\x80-\xBF\u0080-\u024F\u2018-\u203A\u0152-\u017E]|Â[\x80-\xBFºª°§©®±²³µ¶·¹]|â[\x80-\x9F\u2013-\u2026])/.test(str)) {
+        if (str.indexOf('\u00C3') === -1 && str.indexOf('\u00C2') === -1 && str.indexOf('\u00E2') === -1) {
           break;
         }
         try {
@@ -1134,8 +1130,7 @@
         }
       }
 
-      // 3. Normaliza para forma canônica composta NFC (garante ã, ç, é, ê, ô, ú, º, ª íntegros)
-      // 3. Restaura palavras PT-BR caso o banco já contenha o caractere de substituição \uFFFD ()
+      // 3. Restaura palavras PT-BR somente quando existir o caractere \uFFFD explícito
       if (str.indexOf('\uFFFD') !== -1) {
         const mapaFffd = [
           ['\uFFFD\uFFFDo', 'ção'], ['\uFFFD\uFFFDO', 'ÇÃO'],
@@ -1167,6 +1162,7 @@
         }
         str = str.replace(/\uFFFDo(\s|$)/g, 'ão$1').replace(/\uFFFDes(\s|$)/g, 'ões$1');
       }
+
       return str.normalize('NFC');
     }
     // =========================================================================
