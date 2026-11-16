@@ -144,7 +144,7 @@ def normalizar_utf8_seguro(valor: Any) -> str:
 # INÍCIO: obter_logo_base64
 # =========================================================================
 def obter_logo_base64():
-    diretorios_busca = [BASE_DIR / "static", BASE_DIR]
+    diretorios_busca = [BASE_DIR / "static/img", BASE_DIR]
     nomes_alvo = [
         "Logotipo.png", "Logotipo.PNG", "logotipo.png", "logotipo.PNG",
         "LOGOTIPO.PNG", "logo.png", "logo.PNG"
