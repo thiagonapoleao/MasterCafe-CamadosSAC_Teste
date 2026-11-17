@@ -152,7 +152,7 @@
               <i data-lucide="user-plus" class="w-4 h-4"></i>
               Cadastro de Clientes
             </button>
-            <button id="btnAbaUsuarios" onclick="mudarAba('usuarios')" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition flex items-center gap-1.5">
+           <button id="navUsuarios" onclick="switchPage('usuarios')" class="inactive px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
             <span>👤</span> Usuários
             </button>
             <button type="button" onclick="executarRefresh()" title="Clique para recarregar do banco SQL" class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 cursor-pointer transition">
@@ -1069,7 +1069,7 @@
       <!-- ========================================================================= -->
     <!-- INÍCIO: ABA CADASTRO DE USUÁRIOS                                          -->
     <!-- ========================================================================= -->
-    <div id="abaUsuarios" class="tab-content hidden space-y-6">
+    <div id="pageUsuarios" class="hidden space-y-6">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
           <div>
@@ -1563,6 +1563,26 @@
     }
     // =========================================================================
     // TÉRMINO: formatCurrency
+    // =========================================================================
+
+// =========================================================================
+    // INÍCIO: aplicarPermissoesPorPerfil
+    // =========================================================================
+    function aplicarPermissoesPorPerfil() {
+      const isGeral = normalizarTextoUtf8(nivelAcessoLogado).trim().toLowerCase() === 'geral';
+
+      const btnClientes = document.getElementById('navCadastroClientes') || document.getElementById('btnAbaClientes');
+      const btnUsuarios = document.getElementById('navUsuarios') || document.getElementById('btnAbaUsuarios');
+
+      if (btnClientes) {
+        btnClientes.classList.toggle('hidden', !isGeral);
+      }
+      if (btnUsuarios) {
+        btnUsuarios.classList.toggle('hidden', !isGeral);
+      }
+    }
+    // =========================================================================
+    // TÉRMINO: aplicarPermissoesPorPerfil
     // =========================================================================
 
    // =========================================================================
