@@ -1565,14 +1565,13 @@
     // TÉRMINO: formatCurrency
     // =========================================================================
 
-    // =========================================================================
+   // =========================================================================
     // INÍCIO: verificarEstadoAutenticacao
     // =========================================================================
     function verificarEstadoAutenticacao() {
       const loginScreen = document.getElementById('systemLoginScreen');
       const appContainer = document.getElementById('systemAppContainer');
 
-  
       if (!atendenteSACLogado) {
         loginScreen.classList.remove('hidden');
         appContainer.classList.add('hidden');
@@ -1584,7 +1583,7 @@
         document.getElementById('labelSACAtendenteLogado').innerText = normalizarTextoUtf8(atendenteSACLogado);
         document.getElementById('sacAtendente').value = normalizarTextoUtf8(atendenteSACLogado);
 
-        aplicarRegrasDeAcesso();
+        aplicarPermissoesPorPerfil();
         inicializarFormularioSAC();
         renderizarTabelaChamadosSAC();
         renderizarTabelaChamadosAbertos();
@@ -1594,7 +1593,8 @@
           abaDesejada = sessionStorage.getItem('aba_ativa_atual') || 'dashboardSAC';
         } catch(e) {}
 
-        if (abaDesejada === 'cadastroClientes' && (nivelAcessoLogado || '').toLowerCase() !== 'geral') {
+        const isGeral = normalizarTextoUtf8(nivelAcessoLogado).trim().toLowerCase() === 'geral';
+        if (!isGeral && (abaDesejada === 'cadastroClientes' || abaDesejada === 'usuarios')) {
           abaDesejada = 'sac';
         }
 
