@@ -1975,12 +1975,14 @@
     // TÉRMINO: executarRefresh
     // =========================================================================
 
-    // =========================================================================
+   // =========================================================================
     // INÍCIO: switchPage
     // =========================================================================
     function switchPage(page) {
-      if (page === 'cadastroClientes' && (nivelAcessoLogado || '').trim().toLowerCase() !== 'geral') {
-        alert('⛔ Acesso Restrito:\nSeu perfil não tem permissão para cadastrar ou gerenciar clientes.');
+      const isGeral = normalizarTextoUtf8(nivelAcessoLogado).trim().toLowerCase() === 'geral';
+
+      if ((page === 'cadastroClientes' || page === 'usuarios') && !isGeral) {
+        alert('⛔ Acesso Restrito:\nSeu perfil não tem permissão para acessar esta página.');
         switchPage('sac');
         return;
       }
@@ -1990,13 +1992,15 @@
         dashboardSAC: document.getElementById('pageDashboardSAC'),
         sac: document.getElementById('pageSAC'),
         chamadosAbertos: document.getElementById('pageChamadosAbertos'),
-        cadastroClientes: document.getElementById('pageCadastroClientes')
+        cadastroClientes: document.getElementById('pageCadastroClientes'),
+        usuarios: document.getElementById('pageUsuarios') || document.getElementById('abaUsuarios')
       };
       const buttons = {
         dashboardSAC: document.getElementById('navDashboardSAC'),
         sac: document.getElementById('navSAC'),
         chamadosAbertos: document.getElementById('navChamadosAbertos'),
-        cadastroClientes: document.getElementById('navCadastroClientes')
+        cadastroClientes: document.getElementById('navCadastroClientes'),
+        usuarios: document.getElementById('navUsuarios') || document.getElementById('btnAbaUsuarios')
       };
 
       Object.keys(pages).forEach(key => {
@@ -2024,6 +2028,8 @@
       } else if (page === 'cadastroClientes') {
         aplicarRegrasDeAcesso();
         filtrarClientesCadastrados();
+      } else if (page === 'usuarios') {
+        renderizarTabelaUsuarios();
       }
       lucide.createIcons();
     }
