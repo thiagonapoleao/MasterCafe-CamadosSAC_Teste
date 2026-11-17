@@ -1695,47 +1695,7 @@
     // TÉRMINO: realizarLogoutGlobal
     // =========================================================================
 
-    // =========================================================================
-    // INÍCIO: aplicarRegrasDeAcesso
-    // =========================================================================
-    function aplicarRegrasDeAcesso() {
-      const btnCadastro = document.getElementById('navCadastroClientes');
-      const badgeAcesso = document.getElementById('badgeNivelAcesso');
-      const badgeHeader = document.getElementById('badgeHeaderNivelAcesso');
-      const containerCli = document.getElementById('containerAcessoClientes');
-      const bloqueioCli = document.getElementById('bloqueioAcessoClientes');
-
-      const ehGeral = (nivelAcessoLogado || '').trim().toLowerCase() === 'geral';
-
-      if (ehGeral) {
-        if (btnCadastro) btnCadastro.classList.remove('hidden');
-        if (containerCli) containerCli.classList.remove('hidden');
-        if (bloqueioCli) bloqueioCli.classList.add('hidden');
-        if (badgeAcesso) {
-          badgeAcesso.innerText = "Geral";
-          badgeAcesso.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200";
-        }
-        if (badgeHeader) {
-          badgeHeader.innerText = "Geral";
-          badgeHeader.className = "text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block";
-        }
-      } else {
-        if (btnCadastro) btnCadastro.classList.add('hidden');
-        if (containerCli) containerCli.classList.add('hidden');
-        if (bloqueioCli) bloqueioCli.classList.remove('hidden');
-        if (badgeAcesso) {
-          badgeAcesso.innerText = "Atendente";
-          badgeAcesso.className = "text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200";
-        }
-        if (badgeHeader) {
-          badgeHeader.innerText = "Atendente";
-          badgeHeader.className = "text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block";
-        }
-      }
-    }
-    // =========================================================================
-    // TÉRMINO: aplicarRegrasDeAcesso
-    // =========================================================================
+   
 
     // =========================================================================
     // INÍCIO: converterParaPrimeirasMaiusculas
