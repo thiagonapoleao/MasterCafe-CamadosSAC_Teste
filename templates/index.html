@@ -1572,15 +1572,7 @@
       const loginScreen = document.getElementById('systemLoginScreen');
       const appContainer = document.getElementById('systemAppContainer');
 
-      const isGeral = normalizarTextoUtf8(nivelAcessoLogado).trim().toLowerCase() === 'geral';
-      if (!isGeral && (aba === 'clientes' || aba === 'usuarios')) {
-        alert('Acesso restrito ao perfil Geral.');
-        return;
-      }
-      if (aba === 'usuarios') {
-        renderizarTabelaUsuarios();
-      }
-
+  
       if (!atendenteSACLogado) {
         loginScreen.classList.remove('hidden');
         appContainer.classList.add('hidden');
