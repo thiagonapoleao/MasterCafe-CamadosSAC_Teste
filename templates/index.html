@@ -4524,7 +4524,7 @@
       const isEdicao = Boolean(usuarioOriginal || id);
       const payload = {
         acao: isEdicao ? 'editar_usuario' : 'inserir_usuario',
-        id: id || null,
+        id: id ? Number(id) : null,
         usuarioOriginal,
         nome,
         usuario,
@@ -4549,7 +4549,7 @@
             dadosSAC.usuarios[idx] = {...dadosSAC.usuarios[idx], nome, usuario, senha, acesso};
           }
         } else {
-          dadosSAC.usuarios.push({ id: data.id || '', nome, usuario, senha, acesso });
+          dadosSAC.usuarios.push({nome, usuario, senha, acesso});
         }
 
         limparFormularioUsuario();
