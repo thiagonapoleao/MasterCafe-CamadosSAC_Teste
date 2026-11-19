@@ -1777,44 +1777,7 @@
     // TÉRMINO: verificarEstadoAutenticacao
     // =========================================================================
 
-    // =========================================================================
-    // INÍCIO: Sincronização em Tempo Real (Sem Refresh e Sem Perder Formulário)
-    // =========================================================================
-    let syncEmAndamento = false;
-    let assinaturaChamadosAtual = '';
-
-    function estaEditandoChamadoExistente() {
-      const campoLinha = document.getElementById('sacLinha') || document.getElementById('sacId');
-      if (campoLinha && String(campoLinha.value || '').trim() !== '') {
-        return true;
-      }
-      const btnSubmit = document.getElementById('btnSalvarChamado') || document.querySelector('#formSAC button[type="submit"]');
-      if (btnSubmit && /atualizar|salvar altera/i.test(btnSubmit.innerText || '')) {
-        return true;
-      }
-      return false;
-    }
-
-    function atualizarNumeroProximoChamadoSemLimparCampos() {
-      const inputChamado = document.getElementById('sacChamado');
-      if (!inputChamado || estaEditandoChamadoExistente()) return;
-
-      const inputData = document.getElementById('sacData');
-      let ano = String(new Date().getFullYear());
-      if (inputData && inputData.value) {
-        const valData = String(inputData.value).trim();
-        if (valData.includes('-')) ano = valData.split('-')[0];
-        else if (valData.includes('/') && valData.split('/').length === 3) ano = valData.split('/')[2];
-      }
-
-      const maiorSeq = (dadosSAC.maior_sac_ano && Number(dadosSAC.maior_sac_ano[ano])) || 0;
-      const proximoNumero = `SAC-${ano}-${String(maiorSeq + 1).padStart(4, '0')}`;
-
-      if (inputChamado.value !== proximoNumero) {
-        inputChamado.value = proximoNumero;
-      }
-    }
-
+    
     // =========================================================================
     // INÍCIO: Sincronização em Tempo Real (Formulário + Tabelas + Dashboard)
     // =========================================================================
