@@ -1815,12 +1815,65 @@
       }
     }
 
+    // =========================================================================
+    // INÍCIO: Sincronização em Tempo Real (Formulário + Tabelas + Dashboard)
+    // =========================================================================
+    let syncEmAndamento = false;
+    let assinaturaChamadosAtual = '';
+
+    function atualizarNumeroProximoChamadoSemLimparCampos() {
+      if (typeof chamadoEmEdicao !== 'undefined' && chamadoEmEdicao !== null) return;
+
+      const inputChamado = document.getElementById('sacChamado');
+      if (!inputChamado) return;
+
+      const inputData = document.getElementById('sacData');
+      let ano = new Date().getFullYear();
+      if (inputData && inputData.value) {
+        const valData = String(inputData.value).trim();
+        if (valData.includes('-')) ano = parseInt(valData.split('-')[0], 10) || ano;
+        else if (valData.includes('/') && valData.split('/').length === 3) ano = parseInt(valData.split('/')[2], 10) || ano;
+      }
+
+      const proximoNumero = (typeof calcularPreviaProximoChamado === 'function')
+        ? calcularPreviaProximoChamado(ano)
+        : `SAC-${ano}-${String(((dadosSAC.maior_sac_ano && Number(dadosSAC.maior_sac_ano[String(ano)])) || 0) + 1).padStart(4, '0')}`;
+
+      if (inputChamado.value !== proximoNumero) {
+        inputChamado.value = proximoNumero;
+      }
+    }
+
+    function reRenderizarTodasAsTabelasSAC() {
+      // 1. Dispara funções de filtro (se existirem)
+      if (typeof filtrarChamadosSAC === 'function') filtrarChamadosSAC(false);
+      if (typeof filtrarChamadosAbertos === 'function') filtrarChamadosAbertos(false);
+
+      // 2. Garante chamada direta às funções de renderização caso o filtro não chame o render
+      if (typeof renderizarTabelaChamadosSAC === 'function') renderizarTabelaChamadosSAC();
+      if (typeof renderizarTabelaSAC === 'function') renderizarTabelaSAC();
+      if (typeof atualizarTabelaChamados === 'function') atualizarTabelaChamados();
+      if (typeof renderizarTabelaChamadosAbertos === 'function') renderizarTabelaChamadosAbertos();
+
+      // 3. Atualiza contadores visuais de total de registros, se existirem
+      const badgeTotal = document.getElementById('totalChamadosSAC') || document.getElementById('contadorChamadosSAC');
+      if (badgeTotal) {
+        badgeTotal.textContent = String(listaChamadosSAC.length);
+      }
+
+      // 4. Atualiza Dashboard se estiver visível
+      const pageDash = document.getElementById('pageDashboardSAC');
+      if (pageDash && !pageDash.classList.contains('hidden') && typeof atualizarDashboardSAC === 'function') {
+        atualizarDashboardSAC();
+      }
+    }
+
     async function sincronizarChamadosSilencioso(forcarRender = false) {
       if (!atendenteSACLogado || syncEmAndamento) return;
       syncEmAndamento = true;
 
       try {
-        const resp = await fetch('/api/sync', {
+        const resp = await fetch('/api/sync?t=' + Date.now(), {
           method: 'GET',
           headers: { 'Accept': 'application/json' },
           cache: 'no-store'
@@ -1830,40 +1883,51 @@
         const resultado = await resp.json();
         if (resultado.status !== 'success') return;
 
-        const novaAssinatura = JSON.stringify({
-          total: (resultado.chamados || []).length,
-          maior: resultado.maior_sac_ano || {},
-          statusLista: (resultado.chamados || []).map(c => `${c.linha}:${c.chamado}:${c.reembolsoRealizado}:${c.valor}`).join('|')
-        });
+        const novosChamados = (typeof sanitizarObjetoUtf8 === 'function')
+          ? sanitizarObjetoUtf8(resultado.chamados || [])
+          : (resultado.chamados || []);
 
+        // Compara o JSON completo dos chamados para detectar qualquer inserção, edição ou exclusão
+        const novaAssinatura = JSON.stringify(novosChamados);
         const houveMudanca = forcarRender || (novaAssinatura !== assinaturaChamadosAtual);
-        assinaturaChamadosAtual = novaAssinatura;
 
-        dadosSAC.chamados = resultado.chamados || [];
+        dadosSAC.chamados = novosChamados;
         dadosSAC.maior_sac_ano = resultado.maior_sac_ano || {};
+        listaChamadosSAC = novosChamados;
 
-        // Atualiza apenas o número sugerido do próximo chamado sem apagar o que o atendente está digitando
+        // Atualiza sempre o número sugerido do próximo chamado sem mexer no restante do formulário
         atualizarNumeroProximoChamadoSemLimparCampos();
 
         if (houveMudanca) {
-          if (typeof filtrarChamadosSAC === 'function') filtrarChamadosSAC();
-          else if (typeof renderizarTabelaChamadosSAC === 'function') renderizarTabelaChamadosSAC();
-
-          if (typeof filtrarChamadosAbertos === 'function') filtrarChamadosAbertos();
-          else if (typeof renderizarTabelaChamadosAbertos === 'function') renderizarTabelaChamadosAbertos();
-
-          const pageDash = document.getElementById('pageDashboardSAC');
-          if (pageDash && !pageDash.classList.contains('hidden') && typeof atualizarDashboardSAC === 'function') {
-            atualizarDashboardSAC();
-          }
+          assinaturaChamadosAtual = novaAssinatura;
+          reRenderizarTodasAsTabelasSAC();
         }
       } catch (e) {
-        // Ignora falhas temporárias de rede silenciosamente
+        // Ignora falha temporária de rede silenciosamente
       } finally {
         syncEmAndamento = false;
       }
     }
 
+    async function executarRefresh() {
+      await sincronizarChamadosSilencioso(true);
+    }
+
+    // Executa uma primeira sincronização 2 segundos após carregar e depois a cada 8 segundos
+    setTimeout(() => {
+      if (atendenteSACLogado) sincronizarChamadosSilencioso(true);
+    }, 2000);
+
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && atendenteSACLogado) {
+        sincronizarChamadosSilencioso(false);
+      }
+    }, 8000);
+    // =========================================================================
+    // TÉRMINO: Sincronização em Tempo Real (Formulário + Tabelas + Dashboard)
+    // =========================================================================
+
+    
     // Faz o botão "Sincronizar 🔄" atualizar tabelas e próximo número sem recarregar a página inteira
     async function executarRefresh() {
       await sincronizarChamadosSilencioso(true);
